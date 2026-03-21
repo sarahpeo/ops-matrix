@@ -2,7 +2,7 @@
   "set_number": "76417",
   "set_name": "Gringotts Wizarding Bank \u2013 Collectors' Edition",
   "retail_price": 429.99,
-  "checked_at": "2026-03-21T03:32:19.289424+00:00",
+  "checked_at": "2026-03-21T04:06:15.854358+00:00",
   "results": [
     {
       "retailer": "LEGO.com",
@@ -44,6 +44,17 @@
   "history": [
     {
       "timestamp": "2026-03-21T03:32:19.289424+00:00",
+      "prices": {},
+      "stock": {
+        "LEGO.com": false,
+        "Amazon": false,
+        "Walmart": false,
+        "Target": false,
+        "BrickLink (secondary)": true
+      }
+    },
+    {
+      "timestamp": "2026-03-21T04:06:15.854358+00:00",
       "prices": {},
       "stock": {
         "LEGO.com": false,
