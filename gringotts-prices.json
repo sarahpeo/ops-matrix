@@ -1,0 +1,57 @@
+{
+  "set_number": "76417",
+  "set_name": "Gringotts Wizarding Bank \u2013 Collectors' Edition",
+  "retail_price": 429.99,
+  "checked_at": "2026-03-21T03:32:19.289424+00:00",
+  "results": [
+    {
+      "retailer": "LEGO.com",
+      "url": "https://www.lego.com/en-us/product/gringotts-wizarding-bank-collectors-edition-76417",
+      "price": null,
+      "in_stock": false,
+      "status": "fetch_failed"
+    },
+    {
+      "retailer": "Amazon",
+      "url": "https://www.amazon.com/dp/B0BV6G14LQ",
+      "price": null,
+      "in_stock": false,
+      "status": "fetch_failed"
+    },
+    {
+      "retailer": "Walmart",
+      "url": "https://www.walmart.com/ip/15015660453",
+      "price": null,
+      "in_stock": false,
+      "status": "fetch_failed"
+    },
+    {
+      "retailer": "Target",
+      "url": "https://www.target.com/p/-/A-89249792",
+      "price": null,
+      "in_stock": false,
+      "status": "fetch_failed"
+    },
+    {
+      "retailer": "BrickLink (secondary)",
+      "url": "https://www.bricklink.com/v2/catalog/catalogitem.page?S=76417-1",
+      "price": null,
+      "in_stock": true,
+      "status": "marketplace",
+      "note": "Secondary market - multiple sellers"
+    }
+  ],
+  "history": [
+    {
+      "timestamp": "2026-03-21T03:32:19.289424+00:00",
+      "prices": {},
+      "stock": {
+        "LEGO.com": false,
+        "Amazon": false,
+        "Walmart": false,
+        "Target": false,
+        "BrickLink (secondary)": true
+      }
+    }
+  ]
+}
