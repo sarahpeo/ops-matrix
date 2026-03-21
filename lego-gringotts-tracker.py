@@ -12,8 +12,16 @@ Usage:
   python3 lego-gringotts-tracker.py --json        # Output JSON (for dashboard)
   python3 lego-gringotts-tracker.py --max-price 500  # Alert threshold (default: $475)
 
+Email alerts (get notified on your phone!):
+  python3 lego-gringotts-tracker.py --email you@gmail.com --watch
+  # Uses Gmail SMTP by default. Set env vars for credentials:
+  #   export SMTP_USER=you@gmail.com
+  #   export SMTP_PASS=your-app-password    (use Gmail App Password, NOT your login password)
+  #   export SMTP_HOST=smtp.gmail.com       (optional, defaults to Gmail)
+  #   export SMTP_PORT=587                  (optional)
+
 Set up as a cron job for background monitoring:
-  */15 * * * * cd /path/to/ops-matrix && python3 lego-gringotts-tracker.py >> tracker.log 2>&1
+  */15 * * * * cd /path/to/ops-matrix && python3 lego-gringotts-tracker.py --email you@gmail.com >> tracker.log 2>&1
 """
 
 import argparse
@@ -21,10 +29,13 @@ import json
 import os
 import platform
 import re
+import smtplib
 import subprocess
 import sys
 import time
 from datetime import datetime, timezone
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from pathlib import Path
 
 import requests
@@ -40,6 +51,7 @@ THEME = "Harry Potter"
 # ── Config ───────────────────────────────────────────────────────────────────
 DEFAULT_MAX_PRICE = 475.00  # Alert if price is at or below this
 RESULTS_FILE = Path(__file__).parent / "gringotts-prices.json"
+STOCK_STATE_FILE = Path(__file__).parent / ".gringotts-last-stock.json"
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -275,6 +287,122 @@ def send_notification(title, message):
         pass  # Notifications are best-effort
 
 
+def send_email(to_addr, subject, body_text, body_html=None):
+    """Send an email alert via SMTP (Gmail by default)."""
+    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_pass = os.environ.get("SMTP_PASS", "")
+
+    if not smtp_user or not smtp_pass:
+        print(f"  {YELLOW}Email skipped: set SMTP_USER and SMTP_PASS env vars{RESET}")
+        print(f"  {DIM}For Gmail: use an App Password (Google Account > Security > App Passwords){RESET}")
+        return False
+
+    msg = MIMEMultipart("alternative")
+    msg["From"] = smtp_user
+    msg["To"] = to_addr
+    msg["Subject"] = subject
+
+    msg.attach(MIMEText(body_text, "plain"))
+    if body_html:
+        msg.attach(MIMEText(body_html, "html"))
+
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+        print(f"  {GREEN}Email sent to {to_addr}{RESET}")
+        return True
+    except Exception as e:
+        print(f"  {RED}Email failed: {e}{RESET}")
+        return False
+
+
+def build_alert_email(alert_results):
+    """Build a nicely formatted alert email for stock/price alerts."""
+    lines = []
+    html_rows = []
+
+    for r in alert_results:
+        price_str = f"${r['price']:.2f}" if r.get("price") else "Price N/A"
+        lines.append(f"  {r['retailer']}: {price_str} — {r['url']}")
+        html_rows.append(
+            f'<tr><td style="padding:8px 12px;border-bottom:1px solid #eee">'
+            f'<strong>{r["retailer"]}</strong></td>'
+            f'<td style="padding:8px 12px;border-bottom:1px solid #eee;color:#16a34a;'
+            f'font-weight:bold;font-size:18px">{price_str}</td>'
+            f'<td style="padding:8px 12px;border-bottom:1px solid #eee">'
+            f'<a href="{r["url"]}" style="color:#2563eb">Buy Now</a></td></tr>'
+        )
+
+    text = (
+        f"LEGO {SET_NUMBER} — {SET_NAME}\n"
+        f"Retail price: ${RETAIL_PRICE:.2f}\n\n"
+        f"Available at:\n" + "\n".join(lines) + "\n\n"
+        f"Act fast — this set is retiring soon and sells out quickly!"
+    )
+
+    html = f"""
+    <div style="font-family:sans-serif;max-width:500px;margin:0 auto">
+      <div style="background:#1a1d27;color:#e8eaed;padding:20px;border-radius:12px 12px 0 0">
+        <h2 style="margin:0">🏰 Gringotts is Available!</h2>
+        <p style="color:#8b8fa3;margin:8px 0 0">LEGO {SET_NUMBER} &middot; Retail ${RETAIL_PRICE:.2f}</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e5e7eb">
+        {''.join(html_rows)}
+      </table>
+      <div style="background:#fef3c7;padding:14px 16px;border-radius:0 0 12px 12px;
+                  font-size:13px;color:#92400e;border:1px solid #e5e7eb;border-top:none">
+        ⚡ Act fast — this set is retiring ~Jul 2026 and sells out quickly!
+      </div>
+    </div>
+    """
+    return text, html
+
+
+def load_last_stock_state():
+    """Load the last known stock state to detect changes."""
+    if STOCK_STATE_FILE.exists():
+        try:
+            return json.loads(STOCK_STATE_FILE.read_text())
+        except (json.JSONDecodeError, KeyError):
+            pass
+    return {}
+
+
+def save_stock_state(results):
+    """Save current stock state for change detection."""
+    state = {}
+    for r in results:
+        state[r["retailer"]] = {
+            "in_stock": r["in_stock"],
+            "price": r.get("price"),
+            "status": r.get("status"),
+        }
+    STOCK_STATE_FILE.write_text(json.dumps(state, indent=2))
+    return state
+
+
+def detect_restocks(results):
+    """Compare current results to last known state and return newly restocked retailers."""
+    last_state = load_last_stock_state()
+    if not last_state:
+        return []  # First run, nothing to compare
+
+    restocked = []
+    for r in results:
+        retailer = r["retailer"]
+        was_in_stock = last_state.get(retailer, {}).get("in_stock", False)
+        now_in_stock = r["in_stock"]
+
+        if now_in_stock and not was_in_stock:
+            restocked.append(r)
+
+    return restocked
+
+
 # ── Display ──────────────────────────────────────────────────────────────────
 
 # ANSI colors
@@ -387,7 +515,7 @@ def save_results(results):
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
-def run_check(max_price, output_json=False):
+def run_check(max_price, output_json=False, email_to=None):
     """Run all price checks and display/save results."""
     results = []
     for name, checker in CHECKERS:
@@ -403,11 +531,38 @@ def run_check(max_price, output_json=False):
                 "status": f"error: {e}",
             })
 
+    # Detect restocks (items that just came back in stock since last check)
+    restocked = detect_restocks(results)
+
     if output_json:
         print(json.dumps(results, indent=2))
     else:
         display_results(results, max_price)
 
+    # Alert on restocks or good deals
+    alert_results = []
+    for r in results:
+        if r["in_stock"] and r.get("price") and r["price"] <= max_price:
+            alert_results.append(r)
+        elif r["in_stock"] and r["retailer"] == "LEGO.com":
+            alert_results.append(r)  # Always alert on LEGO.com restock
+
+    # Only email on NEW restocks or first-time deals to avoid spam
+    email_worthy = restocked or alert_results
+    if email_to and email_worthy:
+        # Prefer restocked items for the email, fall back to all alerts
+        items_to_report = restocked if restocked else alert_results
+        subject_retailers = ", ".join(r["retailer"] for r in items_to_report)
+        subject = f"🏰 LEGO {SET_NUMBER} RESTOCK: {subject_retailers}"
+        text, html = build_alert_email(items_to_report)
+        send_email(email_to, subject, text, html)
+
+    if restocked and not output_json:
+        for r in restocked:
+            print(f"  {GREEN}{BOLD}🔔 RESTOCK: {r['retailer']} just came back in stock!{RESET}")
+
+    # Save state AFTER detection so next run can compare
+    save_stock_state(results)
     save_results(results)
     return results
 
@@ -428,20 +583,30 @@ def main():
         "--json", action="store_true",
         help="Output results as JSON"
     )
+    parser.add_argument(
+        "--email", type=str, metavar="ADDRESS",
+        help="Email address to send restock/deal alerts to (requires SMTP_USER & SMTP_PASS env vars)"
+    )
     args = parser.parse_args()
+
+    if args.email:
+        print(f"{BOLD}Email alerts enabled:{RESET} {args.email}")
+        if not os.environ.get("SMTP_USER") or not os.environ.get("SMTP_PASS"):
+            print(f"{YELLOW}⚠  Set SMTP_USER and SMTP_PASS env vars for email to work{RESET}")
+            print(f"{DIM}   For Gmail: create an App Password at https://myaccount.google.com/apppasswords{RESET}")
 
     if args.watch:
         interval = args.watch * 60
         print(f"{BOLD}Watching LEGO {SET_NUMBER} every {args.watch} min (Ctrl+C to stop){RESET}")
         while True:
             try:
-                run_check(args.max_price, args.json)
+                run_check(args.max_price, args.json, args.email)
                 time.sleep(interval)
             except KeyboardInterrupt:
                 print(f"\n{DIM}Stopped.{RESET}")
                 break
     else:
-        run_check(args.max_price, args.json)
+        run_check(args.max_price, args.json, args.email)
 
 
 if __name__ == "__main__":

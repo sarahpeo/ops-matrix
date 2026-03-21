@@ -1,0 +1,27 @@
+{
+  "LEGO.com": {
+    "in_stock": false,
+    "price": null,
+    "status": "fetch_failed"
+  },
+  "Amazon": {
+    "in_stock": false,
+    "price": null,
+    "status": "fetch_failed"
+  },
+  "Walmart": {
+    "in_stock": false,
+    "price": null,
+    "status": "fetch_failed"
+  },
+  "Target": {
+    "in_stock": false,
+    "price": null,
+    "status": "fetch_failed"
+  },
+  "BrickLink (secondary)": {
+    "in_stock": true,
+    "price": null,
+    "status": "marketplace"
+  }
+}
