@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LEGO 76417 Gringotts Price Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #242833;
+      --border: #2e3345;
+      --text: #e8eaed;
+      --muted: #8b8fa3;
+      --green: #22c55e;
+      --green-bg: rgba(34, 197, 94, 0.12);
+      --red: #ef4444;
+      --red-bg: rgba(239, 68, 68, 0.12);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.12);
+      --blue: #3b82f6;
+      --blue-bg: rgba(59, 130, 246, 0.12);
+      --gold: #d4a520;
+      --gold-bg: rgba(212, 165, 32, 0.12);
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+    }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brick-icon {
+      width: 44px; height: 44px;
+      background: var(--gold-bg);
+      border: 1px solid rgba(212, 165, 32, 0.3);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .header-subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .retail-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      text-align: center;
+    }
+
+    .retail-badge .label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .retail-badge .value {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text);
+    }
+
+    #last-check {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Main */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    /* Set Info Card */
+    .set-info {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .set-image {
+      width: 200px;
+      height: 200px;
+      background: var(--surface2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      flex-shrink: 0;
+    }
+
+    .set-details { flex: 1; min-width: 280px; }
+
+    .set-details h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .set-meta {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .meta-item {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .meta-item span {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .alert-config {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .alert-config label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .alert-config input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      width: 100px;
+    }
+
+    .alert-config input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    .btn {
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover { opacity: 0.85; }
+
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* Price Cards Grid */
+    .price-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .price-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color 0.2s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .price-card:hover { border-color: var(--gold); }
+
+    .price-card.deal {
+      border-color: var(--green);
+      background: linear-gradient(135deg, var(--surface), rgba(34, 197, 94, 0.05));
+    }
+
+    .price-card.out-of-stock {
+      opacity: 0.6;
+    }
+
+    .card-retailer {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stock-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .stock-dot.in { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .stock-dot.out { background: var(--red); }
+    .stock-dot.unknown { background: var(--muted); }
+
+    .card-price {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 8px;
+    }
+
+    .card-price.good { color: var(--green); }
+    .card-price.ok { color: var(--amber); }
+    .card-price.high { color: var(--red); }
+    .card-price.na { color: var(--muted); font-size: 18px; }
+
+    .card-status {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .card-status.in-stock { background: var(--green-bg); color: var(--green); }
+    .card-status.oos { background: var(--red-bg); color: var(--red); }
+    .card-status.market { background: var(--amber-bg); color: var(--amber); }
+    .card-status.err { background: var(--surface2); color: var(--muted); }
+
+    /* History Chart */
+    .history-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .history-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .chart-container {
+      width: 100%;
+      height: 250px;
+      position: relative;
+    }
+
+    canvas { width: 100% !important; height: 100% !important; }
+
+    .no-data {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--muted);
+      font-size: 14px;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .no-data code {
+      background: var(--surface2);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--gold);
+    }
+
+    /* Quick links */
+    .quick-links {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .quick-links h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+    }
+
+    .link-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 13px;
+      transition: border-color 0.15s;
+    }
+
+    .link-item:hover { border-color: var(--gold); }
+
+    .link-icon {
+      width: 32px; height: 32px;
+      background: var(--bg);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .link-name { font-weight: 600; }
+    .link-desc { font-size: 11px; color: var(--muted); }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      header { padding: 16px; }
+      .container { padding: 16px; }
+      .set-info { flex-direction: column; }
+      .set-image { width: 100%; height: 150px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="brick-icon">🏰</div>
+    <div>
+      <div class="header-title">Gringotts Price Tracker</div>
+      <div class="header-subtitle">LEGO 76417 — Stock &amp; Price Monitor</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="retail-badge">
+      <div class="label">Retail Price</div>
+      <div class="value">$429.99</div>
+    </div>
+    <div id="last-check">No data yet</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Set Info -->
+  <div class="set-info">
+    <div class="set-image">🏰</div>
+    <div class="set-details">
+      <h2>Gringotts Wizarding Bank — Collectors' Edition</h2>
+      <div class="set-meta">
+        <div class="meta-item">Set: <span>76417</span></div>
+        <div class="meta-item">Theme: <span>Harry Potter</span></div>
+        <div class="meta-item">Pieces: <span>4,803</span></div>
+        <div class="meta-item">Minifigs: <span>13</span></div>
+        <div class="meta-item">Retail: <span>$429.99</span></div>
+        <div class="meta-item">Retires: <span>~Jul 2026</span></div>
+      </div>
+      <div class="alert-config">
+        <label>Alert me at or below:</label>
+        <input type="text" id="max-price-input" value="475.00" />
+        <button class="btn" onclick="saveAlertPrice()">Set Alert</button>
+        <button class="btn btn-secondary" onclick="loadPriceData()">Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Price Cards -->
+  <div class="price-grid" id="price-grid">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Price History -->
+  <div class="history-section">
+    <h3>Price History</h3>
+    <div class="chart-container" id="chart-container">
+      <div class="no-data" id="no-data">
+        <div>Run the tracker to collect price data:</div>
+        <code>python3 lego-gringotts-tracker.py --watch</code>
+      </div>
+      <canvas id="price-chart" style="display:none"></canvas>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="quick-links">
+    <h3>Quick Links — Check Stock Manually</h3>
+    <div class="links-grid">
+      <a class="link-item" href="https://www.lego.com/en-us/product/gringotts-wizarding-bank-collectors-edition-76417" target="_blank">
+        <div class="link-icon">🟡</div>
+        <div><div class="link-name">LEGO.com</div><div class="link-desc">Official store — best bet for retail price</div></div>
+      </a>
+      <a class="link-item" href="https://www.amazon.com/dp/B0BV6G14LQ" target="_blank">
+        <div class="link-icon">📦</div>
+        <div><div class="link-name">Amazon</div><div class="link-desc">Check for retail or third-party offers</div></div>
+      </a>
+      <a class="link-item" href="https://www.walmart.com/ip/15015660453" target="_blank">
+        <div class="link-icon">🔵</div>
+        <div><div class="link-name">Walmart</div><div class="link-desc">Sometimes has stock at retail</div></div>
+      </a>
+      <a class="link-item" href="https://www.target.com/p/-/A-89249792" target="_blank">
+        <div class="link-icon">🔴</div>
+        <div><div class="link-name">Target</div><div class="link-desc">Check in-store &amp; online availability</div></div>
+      </a>
+      <a class="link-item" href="https://www.bricklink.com/v2/catalog/catalogitem.page?S=76417-1" target="_blank">
+        <div class="link-icon">🧱</div>
+        <div><div class="link-name">BrickLink</div><div class="link-desc">Secondary market — new &amp; used listings</div></div>
+      </a>
+      <a class="link-item" href="https://camelcamelcamel.com/product/B0BV6G14LQ" target="_blank">
+        <div class="link-icon">🐫</div>
+        <div><div class="link-name">CamelCamelCamel</div><div class="link-desc">Amazon price history &amp; alerts</div></div>
+      </a>
+      <a class="link-item" href="https://brickranker.com/rankings/set/76417-1/gringotts-wizarding-bank-collectors-edition" target="_blank">
+        <div class="link-icon">📊</div>
+        <div><div class="link-name">Brick Ranker</div><div class="link-desc">Value tracking &amp; investment data</div></div>
+      </a>
+      <a class="link-item" href="https://www.ebay.com/sch/i.html?_nkw=lego+76417+gringotts&_sacat=0&LH_BIN=1&_sop=15" target="_blank">
+        <div class="link-icon">🛒</div>
+        <div><div class="link-name">eBay (Buy It Now)</div><div class="link-desc">Sorted by lowest price + shipping</div></div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var RETAIL_PRICE = 429.99;
+  var alertPrice = parseFloat(localStorage.getItem('gringotts-alert-price') || '475');
+  document.getElementById('max-price-input').value = alertPrice.toFixed(2);
+
+  window.saveAlertPrice = function() {
+    var val = parseFloat(document.getElementById('max-price-input').value);
+    if (!isNaN(val) && val > 0) {
+      alertPrice = val;
+      localStorage.setItem('gringotts-alert-price', val.toString());
+      renderCards(lastData);
+    }
+  };
+
+  var lastData = null;
+
+  function renderCards(data) {
+    var grid = document.getElementById('price-grid');
+    if (!data || !data.results) {
+      grid.innerHTML = '<div class="no-data">No price data yet. Run the Python tracker first.</div>';
+      return;
+    }
+
+    lastData = data;
+    grid.innerHTML = '';
+
+    data.results.forEach(function(r) {
+      var card = document.createElement('a');
+      card.href = r.url || '#';
+      card.target = '_blank';
+      card.className = 'price-card';
+
+      if (r.in_stock && r.price && r.price <= alertPrice) card.className += ' deal';
+      if (!r.in_stock && r.status !== 'marketplace') card.className += ' out-of-stock';
+
+      // Price class
+      var priceClass = 'na';
+      if (r.price) {
+        if (r.price <= RETAIL_PRICE) priceClass = 'good';
+        else if (r.price <= alertPrice) priceClass = 'ok';
+        else priceClass = 'high';
+      }
+
+      // Stock dot
+      var dotClass = 'unknown';
+      if (r.in_stock) dotClass = 'in';
+      else if (r.status && r.status !== 'unknown' && r.status !== 'fetch_failed') dotClass = 'out';
+
+      // Status badge
+      var statusClass = 'err';
+      var statusText = r.status || 'unknown';
+      if (r.in_stock && r.price && r.price <= alertPrice) {
+        statusClass = 'in-stock';
+        statusText = 'DEAL!';
+      } else if (r.in_stock) {
+        statusClass = 'in-stock';
+        statusText = 'In Stock';
+      } else if (r.status === 'marketplace') {
+        statusClass = 'market';
+        statusText = 'Marketplace';
+      } else if (r.status === 'out_of_stock' || r.status === 'temporarily_out_of_stock') {
+        statusClass = 'oos';
+        statusText = 'Out of Stock';
+      }
+
+      card.innerHTML =
+        '<div class="card-retailer">' +
+          '<span>' + r.retailer + '</span>' +
+          '<span class="stock-dot ' + dotClass + '"></span>' +
+        '</div>' +
+        '<div class="card-price ' + priceClass + '">' +
+          (r.price ? '$' + r.price.toFixed(2) : 'Price N/A') +
+        '</div>' +
+        '<span class="card-status ' + statusClass + '">' + statusText + '</span>';
+
+      grid.appendChild(card);
+    });
+  }
+
+  function renderChart(data) {
+    var container = document.getElementById('chart-container');
+    var noData = document.getElementById('no-data');
+    var canvas = document.getElementById('price-chart');
+
+    if (!data || !data.history || data.history.length < 2) {
+      noData.style.display = 'flex';
+      canvas.style.display = 'none';
+      return;
+    }
+
+    noData.style.display = 'none';
+    canvas.style.display = 'block';
+
+    var ctx = canvas.getContext('2d');
+    var rect = container.getBoundingClientRect();
+    canvas.width = rect.width * 2;
+    canvas.height = rect.height * 2;
+    ctx.scale(2, 2);
+    var W = rect.width, H = rect.height;
+
+    var history = data.history;
+    var retailers = {};
+
+    // Collect all retailers with prices
+    history.forEach(function(h) {
+      if (h.prices) {
+        Object.keys(h.prices).forEach(function(r) {
+          if (h.prices[r] !== null) retailers[r] = true;
+        });
+      }
+    });
+
+    var retailerList = Object.keys(retailers);
+    if (!retailerList.length) {
+      noData.style.display = 'flex';
+      canvas.style.display = 'none';
+      return;
+    }
+
+    var colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+    // Find price range
+    var allPrices = [];
+    history.forEach(function(h) {
+      if (h.prices) {
+        Object.values(h.prices).forEach(function(p) {
+          if (p !== null) allPrices.push(p);
+        });
+      }
+    });
+    allPrices.push(RETAIL_PRICE);
+
+    var minP = Math.min.apply(null, allPrices) * 0.95;
+    var maxP = Math.max.apply(null, allPrices) * 1.05;
+
+    var padL = 60, padR = 20, padT = 20, padB = 40;
+    var chartW = W - padL - padR;
+    var chartH = H - padT - padB;
+
+    // Background
+    ctx.fillStyle = '#1a1d27';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid lines
+    ctx.strokeStyle = '#2e3345';
+    ctx.lineWidth = 0.5;
+    var nGridY = 5;
+    for (var i = 0; i <= nGridY; i++) {
+      var y = padT + (chartH / nGridY) * i;
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(W - padR, y);
+      ctx.stroke();
+
+      var priceLabel = maxP - (maxP - minP) * (i / nGridY);
+      ctx.fillStyle = '#8b8fa3';
+      ctx.font = '11px JetBrains Mono';
+      ctx.textAlign = 'right';
+      ctx.fillText('$' + priceLabel.toFixed(0), padL - 8, y + 4);
+    }
+
+    // Retail price line
+    var retailY = padT + chartH * (1 - (RETAIL_PRICE - minP) / (maxP - minP));
+    ctx.strokeStyle = 'rgba(212, 165, 32, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(padL, retailY);
+    ctx.lineTo(W - padR, retailY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#d4a520';
+    ctx.font = '10px Inter';
+    ctx.textAlign = 'left';
+    ctx.fillText('Retail $429.99', padL + 4, retailY - 6);
+
+    // Draw lines per retailer
+    retailerList.forEach(function(retailer, ri) {
+      var color = colors[ri % colors.length];
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      var started = false;
+
+      history.forEach(function(h, hi) {
+        var price = h.prices && h.prices[retailer];
+        if (price === null || price === undefined) return;
+
+        var x = padL + (chartW * hi / (history.length - 1 || 1));
+        var y = padT + chartH * (1 - (price - minP) / (maxP - minP));
+
+        if (!started) { ctx.moveTo(x, y); started = true; }
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // Legend
+      ctx.fillStyle = color;
+      ctx.fillRect(padL + ri * 110, H - 15, 10, 10);
+      ctx.fillStyle = '#8b8fa3';
+      ctx.font = '11px Inter';
+      ctx.textAlign = 'left';
+      ctx.fillText(retailer, padL + ri * 110 + 14, H - 6);
+    });
+  }
+
+  window.loadPriceData = function() {
+    fetch('gringotts-prices.json?t=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        lastData = data;
+        renderCards(data);
+        renderChart(data);
+
+        if (data.checked_at) {
+          var d = new Date(data.checked_at);
+          document.getElementById('last-check').textContent =
+            'Last check: ' + d.toLocaleString();
+        }
+
+        // Check for deals and notify
+        if (data.results) {
+          data.results.forEach(function(r) {
+            if (r.in_stock && r.price && r.price <= alertPrice) {
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('LEGO 76417 Deal!', {
+                  body: r.retailer + ': $' + r.price.toFixed(2),
+                  icon: '🏰',
+                });
+              }
+            }
+          });
+        }
+      })
+      .catch(function() {
+        // No data file yet, show placeholder cards
+        renderCards(null);
+      });
+  };
+
+  // Request notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  // Load on start
+  loadPriceData();
+
+  // Auto-refresh every 60 seconds
+  setInterval(loadPriceData, 60000);
+})();
+</script>
+</body>
+</html>
