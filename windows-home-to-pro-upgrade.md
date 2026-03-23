@@ -35,6 +35,24 @@ This does the **exact same thing** as the Settings UI above — just typed into 
 - The upgrade is instant after the download completes (usually a few minutes)
 - You will need to reboot once
 
+## Does Pro Survive Restarts and Resets?
+
+**Yes.** The Pro activation is tied to your computer's hardware. Once upgraded:
+
+- **Restarts and shutdowns** — Pro stays
+- **Windows Reset ("Keep my files" or "Remove everything")** — Pro stays
+- **Full reinstall from USB** — Windows auto-detects the hardware and activates Pro again (no key re-entry needed)
+
+The upgrade is permanent for that machine.
+
+## Setting Up Multiple Computers
+
+Each computer needs **its own product key**. One key activates one PC. If you are upgrading two computers:
+
+- Buy two separate keys
+- Follow the upgrade steps on each computer independently
+- Each machine will retain its own Pro activation permanently
+
 ## Pro Features You'll Gain
 
 - BitLocker drive encryption
